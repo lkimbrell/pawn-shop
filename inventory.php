@@ -1,3 +1,51 @@
+```php
+<?php
+
+// Connect to the database
+include "database.php";
+
+// Get the search value
+$search = "";
+
+if (isset($_GET["search"])) {
+    $search = $_GET["search"];
+}
+
+// Search for products if a search was entered
+if ($search != "") {
+
+    // Add wildcards to allow partial searches
+    $search = "%" . $search . "%";
+
+    // Search by product name or category
+    $sql = "SELECT products.*, categories.CategoryName
+            FROM products
+            LEFT JOIN categories
+            ON products.CategoryID = categories.CategoryID
+            WHERE products.ProductName LIKE ?
+            OR categories.CategoryName LIKE ?";
+
+    // Prepare the search
+    $statement = $connection->prepare($sql);
+    $statement->bind_param("ss", $search, $search);
+    $statement->execute();
+
+    // Get the search results
+    $result = $statement->get_result();
+
+} else {
+
+    // Display all products when no search is entered
+    $sql = "SELECT products.*, categories.CategoryName
+            FROM products
+            LEFT JOIN categories
+            ON products.CategoryID = categories.CategoryID";
+
+    $result = $connection->query($sql);
+}
+
+?>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,9 +55,9 @@
 
 <body>
 
+<!-- Website navigation -->
 <nav>
     <h2>Carolina Pawn & Trade</h2>
-
     <a href="index.php">Home</a>
     <a href="inventory.php">Inventory</a>
     <a href="about.php">About</a>
@@ -17,62 +65,78 @@
     <a href="account.php">Account</a>
 </nav>
 
-<div class="content">
+<div class="inventory-container">
 
-    <h1>Our Inventory</h1>
+    <h1>Inventory</h1>
 
-    <p>Browse our currently available items.</p>
+    <!-- Search instructions -->
+    <p>Search for an item by name or category.</p>
 
-    <div class="search">
-        <input type="text" placeholder="Search inventory...">
-        <button>Search</button>
-    </div>
+    <!-- Search form -->
+    <form method="GET" action="inventory.php">
 
-    <div class="inventory">
+        <input
+            type="text"
+            name="search"
+            placeholder="Search inventory..."
+            value="<?php echo htmlspecialchars($_GET["search"] ?? ""); ?>"
+        >
 
-        <div class="item">
-            <h3>PlayStation 5</h3>
-            <p>Electronics</p>
-            <p>Used - Good Condition</p>
-            <strong>$349.99</strong>
-            <br><br>
-            <button>View Item</button>
-        </div>
+        <button type="submit">Search</button>
 
-        <div class="item">
-            <h3>DeWalt Cordless Drill</h3>
-            <p>Tools</p>
-            <p>Used - Good Condition</p>
-            <strong>$129.99</strong>
-            <br><br>
-            <button>View Item</button>
-        </div>
+    </form>
 
-        <div class="item">
-            <h3>Samsung 55" TV</h3>
-            <p>Electronics</p>
-            <p>Used - Excellent Condition</p>
-            <strong>$299.99</strong>
-            <br><br>
-            <button>View Item</button>
-        </div>
+    <br>
 
-        <div class="item">
-            <h3>Fender Stratocaster</h3>
-            <p>Musical Instruments</p>
-            <p>Used - Good Condition</p>
-            <strong>$499.99</strong>
-            <br><br>
-            <button>View Item</button>
-        </div>
+    <!-- Display products -->
+    <?php if ($result->num_rows > 0) { ?>
 
-    </div>
+        <?php while ($product = $result->fetch_assoc()) { ?>
+
+            <div class="product">
+
+                <h2><?php echo htmlspecialchars($product["ProductName"]); ?></h2>
+
+                <p>
+                    <strong>Category:</strong>
+                    <?php echo htmlspecialchars($product["CategoryName"]); ?>
+                </p>
+
+                <p>
+                    <strong>Description:</strong>
+                    <?php echo htmlspecialchars($product["Description"]); ?>
+                </p>
+
+                <p>
+                    <strong>Condition:</strong>
+                    <?php echo htmlspecialchars($product["ProductCondition"]); ?>
+                </p>
+
+                <p>
+                    <strong>Price:</strong>
+                    $<?php echo number_format($product["Price"], 2); ?>
+                </p>
+
+                <p>
+                    <strong>Status:</strong>
+                    <?php echo htmlspecialchars($product["Status"]); ?>
+                </p>
+
+            </div>
+
+            <hr>
+
+        <?php } ?>
+
+    <?php } else { ?>
+
+        <!-- Display message when no products are found -->
+        <p>No products were found.</p>
+
+    <?php } ?>
 
 </div>
 
-<footer>
-    <p>&copy; 2026 Carolina Pawn & Trade</p>
-</footer>
-
 </body>
 </html>
+```

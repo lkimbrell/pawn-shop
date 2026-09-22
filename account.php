@@ -49,8 +49,10 @@ if (!isset($_SESSION["UserID"])) {
 
         <h2>Account Options</h2>
 
+    <a href="change_password.php">
         <button>Change Password</button>
-
+    </a>
+    
         <br><br>
 
         <a href="logout.php">Logout</a>

@@ -1,31 +1,61 @@
+```php
 <?php
 
+// Connect to the database
 include "database.php";
 
 $message = "";
 
+// Check if the registration form was submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
+    // Get the information from the form
     $firstName = $_POST["firstName"];
     $lastName = $_POST["lastName"];
     $email = $_POST["email"];
     $password = $_POST["password"];
 
-    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    // Check if the password is at least 8 characters
+    if (strlen($password) < 8) {
 
-    $sql = "INSERT INTO users (FirstName, LastName, Email, Password, Role)
-            VALUES (?, ?, ?, ?, ?)";
+        $message = "Password must be at least 8 characters.";
 
-    $statement = $connection->prepare($sql);
+    // Check if the password contains a number
+    } elseif (!preg_match("/[0-9]/", $password)) {
 
-    $role = "customer";
+        $message = "Password must contain at least one number.";
 
-    $statement->bind_param("sssss", $firstName, $lastName, $email, $hashedPassword, $role);
+    // Check if the password contains a special character
+    } elseif (!preg_match("/[^a-zA-Z0-9]/", $password)) {
 
-    if ($statement->execute()) {
-        $message = "Account created successfully! You can now log in.";
+        $message = "Password must contain at least one special character.";
+
     } else {
-        $message = "Error creating account. The email may already be in use.";
+
+        // Securely hash the password
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+        // Add the new user to the database
+        $sql = "INSERT INTO users (FirstName, LastName, Email, Password, Role)
+                VALUES (?, ?, ?, ?, ?)";
+
+        $statement = $connection->prepare($sql);
+
+        // Set the new user as a customer
+        $role = "customer";
+
+        $statement->bind_param("sssss", $firstName, $lastName, $email, $hashedPassword, $role);
+
+        // Check if the account was created
+        if ($statement->execute()) {
+
+            $message = "Account created successfully! You can now log in.";
+
+        } else {
+
+            $message = "Error creating account. The email may already be in use.";
+
+        }
     }
 }
 
@@ -40,6 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <body>
 
+<!-- Website navigation -->
 <nav>
     <h2>Carolina Pawn & Trade</h2>
     <a href="index.php">Home</a>
@@ -53,10 +84,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <h1>Create Account</h1>
 
+    <!-- Password requirements -->
+    <p>
+        Password must be at least 8 characters and contain
+        one number and one special character.
+    </p>
+
+    <!-- Display registration message -->
     <?php if ($message != "") { ?>
         <p><?php echo $message; ?></p>
     <?php } ?>
 
+    <!-- Registration form -->
     <form method="POST" action="register.php">
 
         <label>First Name:</label>
@@ -83,3 +122,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 </body>
 </html>
+```
